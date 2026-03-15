@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Lint with Ruff
+        run: |
+          cd backend
+          pip install ruff
+          ruff check .
+
+      - name: Format check with Black
+        run: |
+          cd backend
+          pip install black
+          black --check .
+
+      - name: Run tests
+        run: |
+          cd backend
+          pytest tests/ -v --cov=. --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: backend
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Lint with ESLint
+        run: |
+          cd frontend
+          bunx eslint src/
+
+      - name: Type check
+        run: |
+          cd frontend
+          bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json
+
+      - name: Build
+        run: |
+          cd frontend
+          bun run build
+
+      - name: Run tests
+        run: |
+          cd frontend
+          bunx vitest run

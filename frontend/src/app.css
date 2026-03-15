@@ -1,0 +1,55 @@
+/* Global Tailwind imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom pixel art styles (extending app.html) */
+@layer utilities {
+  .pixel-border {
+    border: 4px solid var(--border);
+    box-shadow: 4px 4px 0 #000;
+  }
+
+  .scanlines {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px
+    );
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-accent-2 text-white font-pixel border-2 border-accent-2 shadow-pixel hover:bg-opacity-90 transition-all;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-bg-card text-text-main border-2 border-border shadow-pixel hover:border-accent-2 transition-all;
+  }
+
+  .card {
+    @apply pixel-box;
+  }
+
+  .card-accent {
+    @apply pixel-box-accent;
+  }
+}
+
+/* Svelte 5 Runes */
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+  }
+}

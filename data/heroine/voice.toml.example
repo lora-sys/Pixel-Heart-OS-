@@ -1,0 +1,17 @@
+[speech_patterns]
+filler_words = ["um", "actually", "i mean"]
+sentence_ends = ["...", "."]
+pauses = "frequent"
+
+[vocabulary]
+level = "academic"
+quirks = [
+    "quotes_literature",
+    "uses_metaphors",
+    "precise_descriptors"
+]
+
+[emotional_tone]
+primary = "warm_guarded"
+secondary = "wry"
+under_stress = "defensive_perfectionist"

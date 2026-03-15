@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+bun_install/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+data/*.md
+data/*.toml
+!data/heroine/.keep
+!data/npcs/.keep
+!data/scenes/.keep
+!data/heroine/soul.md.example
+!data/heroine/identity.md.example
+!data/heroine/voice.toml.example
+
+# Logs
+logs/
+*.log
+backend/logs/
+
+# Database
+*.db
+*.sqlite
+backend/*.db
+
+# ChromaDB
+chroma_db/
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Local development
+.cache/
+.turbo/
+
+# Temporary files
+tmp/
+temp/

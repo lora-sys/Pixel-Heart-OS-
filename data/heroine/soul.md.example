@@ -1,0 +1,44 @@
+---
+core_traumas:
+  - event: "parent_left_at_age_8"
+    emotional_impact: "abandonment_anxiety"
+  - event: "bullied_in_school"
+    emotional_impact: "social_awkwardness"
+defense_mechanisms:
+  - "intellectualization"
+  - "perfectionism"
+  - "avoidance"
+ideal_type:
+  attraction_traits:
+    - "emotionally_available"
+    - "nurturing"
+    - "patient"
+  aversion_traits:
+    - "dismissive"
+    - "critical"
+    - "controlling"
+scene_preferences:
+  - "rainy_window"
+  - "quiet_cafe"
+  - "empty_library"
+---
+
+# Soul Structure
+
+## Core Traumas
+- parent_left_at_age_8 → abandonment_anxiety
+- bullied_in_school → social_awkwardness
+
+## Defense Mechanisms
+- Intellectualization
+- Perfectionism
+- Avoidance
+
+## Ideal Type
+Attraction traits: emotionally_available, nurturing, patient
+Aversion traits: dismissive, critical, controlling
+
+## Scene Preferences
+- Rainy window: safe isolation, emotional release
+- Quiet cafe: low-pressure socializing
+- Empty library: intellectual comfort zone
