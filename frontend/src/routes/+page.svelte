@@ -1,13 +1,16 @@
 <script lang="ts">
-  import { state } from '$lib/stores/app-store';
   import { goto } from '$app/navigation';
+  import { apiStore } from '$lib/core/store';
 
   $effect(() => {
-    if ($state.heroine) {
-      goto('/universe');
-    } else {
-      goto('/create');
-    }
+    const unsubscribe = apiStore.subscribe(state => {
+      if (state.heroine) {
+        goto('/universe');
+      } else {
+        goto('/create');
+      }
+    });
+    return () => unsubscribe();
   });
 </script>
 

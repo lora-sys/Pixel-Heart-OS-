@@ -1,49 +1,42 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { uiStore, apiStore, invalidateCache, API_CACHE_KEYS } from '$lib/core/store';
-  import { simulationService, npcService } from '$lib/services';
+  import { uiStore, apiStore } from '$lib/core/store';
+  import { simulationService } from '$lib/services/simulation.service';
   import { eventBus } from '$lib/event-bus';
   import PhaserGame from '$lib/PhaserGame.svelte';
 
   let playerInput = '';
   let localLoading = false;
   let dialogueHistory: Array<{ speaker: string; text: string; emotion?: string }> = [];
-  let currentSceneType: 'dialogue' = 'dialogue';
   let localError: string | null = null;
 
   onMount(async () => {
-    if (!apiStore.heroine || apiStore.npcs.length === 0) {
-      goto('/universe');
-      return;
-    }
+    // Check heroine and NPCs existence
+    const checkAndLoad = () => {
+      const state = { ...$apiStore }; // Snapshot
+      if (!state.heroine || state.npcs.length === 0) {
+        goto('/universe');
+        return;
+      }
+      loadState();
+    };
 
-    // Load initial simulation state
-    await loadState();
-
-    // Listen for NPC clicks from Phaser
-    const unsubscribe = eventBus.on('npc-clicked', (npcId: string) => {
-      console.log('NPC clicked:', npcId);
-    });
-
-    return () => unsubscribe();
+    // Initial check
+    checkAndLoad();
   });
 
   async function loadState() {
     try {
       const simState = await simulationService.getState();
 
-      // Update API store with active NPCs (use npcService to get full details if needed)
-      // For now, use npc list from store
-      // apiStore.npcs already loaded from universe page (should be in cache)
-
-      // Set current scene (placeholder)
+      // Update API store with scenes if needed
       if (simState.current_scene) {
-        apiStore.scenes = [simState.current_scene]; // or append
+        apiStore.update(state => ({
+          ...state,
+          scenes: [simState.current_scene]
+        }));
       }
-
-      // Load NPC voice data for dialogue (can be done lazily)
-      // Pre-fetch if needed
 
       // Load recent history (would reconstruct from beads)
       dialogueHistory = [];
@@ -71,27 +64,19 @@
 
       // Add NPC responses with typing effect
       response.responses.forEach((resp, idx) => {
-        const npc = apiStore.npcs.find(n => n.id === resp.npc_id);
-        const speaker = npc?.name || 'NPC';
         setTimeout(() => {
           dialogueHistory.push({
-            speaker,
+            speaker: resp.npc_name || resp.npc_id,
             text: resp.dialogue,
             emotion: resp.emotion
           });
-          // Could trigger Phaser update via eventBus
           eventBus.emit('dialogue-update', { npc_id: resp.npc_id, dialogue: resp.dialogue });
-        }, idx * 500); // Stagger responses
+        }, idx * 500);
       });
-
-      // Invalidate simulation state cache (it changed)
-      invalidateCache(API_CACHE_KEYS.SIMULATION_STATE);
-      // Also invalidate beads timeline
-      invalidateCache(API_CACHE_KEYS.BEADS_TIMELINE('main', 100, 0));
 
     } catch (e: any) {
       localError = e.message || 'Failed to take turn';
-      uiStore.errorMessage = localError;
+      uiStore.update(s => ({ ...s, errorMessage: localError }));
     } finally {
       localLoading = false;
     }
@@ -118,7 +103,7 @@
       <!-- Dialogue History -->
       <div class="h-96 overflow-y-auto space-y-3 p-2 bg-bg-dark border border-border">
         {#each dialogueHistory as entry}
-          <div class="border-l-2 {entry.speaker === 'player' ? 'border-accent-2 pl-3' : 'border-accent-1 pl-3'}">
+          <div class="border-l-4 {entry.speaker === 'player' ? 'border-accent-2 pl-3' : 'border-accent-1 pl-3'}">
             <span class="font-bold text-sm">{entry.speaker}</span>
             <p class="text-text-main">{entry.text}</p>
             {#if entry.emotion}
@@ -156,7 +141,7 @@
     <div class="card">
       <h2 class="font-pixel text-accent-3 mb-4">Visualization</h2>
       <div class="bg-bg-dark border border-border" style="height: 400px;">
-        <PhaserGame />
+        <PhaserGame sceneType="dialogue" />
       </div>
       <div class="mt-4 text-xs text-text-dim">
         Relationship nebula will appear here.

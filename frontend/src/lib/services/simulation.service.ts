@@ -1,7 +1,7 @@
 /**
  * Simulation Service - API client for simulation endpoints
  */
-import { dedupedFetch } from './api/client';
+import { dedupedFetch } from '../api/client';
 
 export interface SimulationTurnRequest {
   player_action: string;

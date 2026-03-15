@@ -1,0 +1,1 @@
+import{G as e}from"./Bk7iIqpG.js";const l=e({currentRoute:"/",sidebarOpen:!1,createHeroineModalOpen:!1,refineNPCModalOpen:!1,branchModalOpen:!1,diffViewerOpen:!1,selectedBeadId:null,selectedNPCId:null,selectedSceneId:null,currentBranch:"main",isLoading:!1,errorMessage:null,toast:null,editorMode:"view",canvasScale:1,showNebula:!0,showLabels:!0});export{l as u};

@@ -1,7 +1,7 @@
 /**
  * NPC Service - API client for NPC endpoints
  */
-import { dedupedFetch } from './api/client';
+import { dedupedFetch } from '../api/client';
 import type { NPC } from '../types/shared-types';
 
 export interface NPCResponse {

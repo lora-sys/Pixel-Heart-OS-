@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { apiStore } from '$lib/core/store';
-  import { beadService } from '$lib/services';
+  import { beadService } from '$lib/services/bead.service';
   import type { Bead } from '$lib/types/shared-types';
 
   let beads: Bead[] = [];
@@ -11,7 +11,7 @@
   let selectedBranch = 'main';
 
   onMount(async () => {
-    if (!apiStore.heroine) {
+    if (!$apiStore.heroine) {
       goto('/create');
       return;
     }
@@ -68,14 +68,14 @@
 
   <!-- Branch selector -->
   <div class="mb-6 flex items-center gap-4">
-    <label class="font-pixel text-sm">Branch:</label>
+    <label for="branch-select" class="font-pixel text-sm">Branch:</label>
     <select
+      id="branch-select"
       bind:value={selectedBranch}
       on:change={loadTimeline}
       class="bg-bg-dark border border-border px-3 py-1 font-mono"
     >
       <option value="main">main</option>
-      <!-- other branches would be populated from beadService.listBranches() -->
     </select>
     <button class="btn-secondary text-xs px-3 py-1" on:click={loadTimeline}>
       Refresh

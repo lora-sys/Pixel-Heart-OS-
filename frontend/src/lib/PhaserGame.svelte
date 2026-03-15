@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy, afterUpdate } from 'svelte';
-  import Phaser from 'phaser';
+  import type { Phaser } from 'phaser';
   import { eventBus } from '$lib/event-bus';
-  import { state } from '$lib/stores/app-store';
-  import { simulationAPI } from '$lib/api/client';
+  import { apiStore } from '$lib/core/store';
 
   export let sceneType: 'timeline' | 'nebula' | 'dialogue' = 'dialogue';
 
@@ -13,7 +12,7 @@
   let prevBeadsLength = 0;
   let prevNebulaNodesLength = 0;
 
-  // Helper: Get emotion color (same as app.css)
+  // Helper: Get emotion color
   function getEmotionColor(emotion?: string): number {
     const colors: Record<string, number> = {
       neutral: 0x8888bb,
@@ -82,35 +81,42 @@
       game?.scene.scenes[0]?.events?.emit('change-scene', data);
     });
 
+    const unsubscribeDialogue = eventBus.on('dialogue-update', (data: { npc_id: string; dialogue: string }) => {
+      if (currentScene && 'updateDialogue' in currentScene) {
+        (currentScene as any).updateDialogue(data.dialogue);
+      }
+    });
+
     return () => {
       unsubscribeHighlight();
       unsubscribeSwitchScene();
+      unsubscribeDialogue();
       game?.destroy(true);
     };
   });
 
-  // React to state changes (beads, nebula, activeNPCs)
+  // React to state changes
   afterUpdate(() => {
     if (!currentScene) return;
 
     // Timeline scene: update beads
-    if (sceneType === 'timeline' && state.beads.length !== prevBeadsLength) {
-      prevBeadsLength = state.beads.length;
-      currentScene.events.emit('update-beads', state.beads);
+    if (sceneType === 'timeline' && apiStore.beads.length !== prevBeadsLength) {
+      prevBeadsLength = apiStore.beads.length;
+      currentScene.events.emit('update-beads', apiStore.beads);
     }
 
     // Nebula scene: update nodes/edges
     if (sceneType === 'nebula') {
-      const totalNodes = state.relationshipNebula.nodes.length;
+      const totalNodes = apiStore.relationshipNebula?.nodes.length || 0;
       if (totalNodes !== prevNebulaNodesLength) {
         prevNebulaNodesLength = totalNodes;
-        currentScene.events.emit('update-nebula', state.relationshipNebula);
+        currentScene.events.emit('update-nebula', apiStore.relationshipNebula);
       }
     }
 
     // Dialogue scene: update NPC
-    if (sceneType === 'dialogue' && state.activeNPCs.length > 0) {
-      currentScene.events.emit('update-npc', state.activeNPCs[0]);
+    if (sceneType === 'dialogue' && apiStore.npcs.length > 0) {
+      currentScene.events.emit('update-npc', apiStore.npcs[0]);
     }
   });
 
@@ -122,32 +128,26 @@
           private beadGraphics: Phaser.GameObjects.Graphics[] = [];
 
           create() {
-            // Listen for updates from Svelte
             this.events.on('update-beads', (beads: any[]) => {
               this.beads = beads;
               this.redraw();
             });
 
-            // Initial draw
-            this.beads = state.beads;
+            this.beads = apiStore.beads;
             this.redraw();
-
             eventBus.emit('scene-ready');
           }
 
           redraw() {
-            // Clear existing
             this.beadGraphics.forEach(g => g.destroy());
             this.beadGraphics = [];
 
-            // Draw beads in a simple grid
             this.beads.forEach((bead, i) => {
               const x = 100 + (i % 10) * 70;
               const y = 100 + Math.floor(i / 10) * 70;
               const color = getEmotionColor(bead.emotion_tag);
               const circle = this.add.circle(x, y, 20, color).setInteractive();
 
-              // Simple hover effect
               circle.on('pointerover', () => {
                 circle.setScale(1.2);
                 eventBus.emit('bead-selected', bead.id);
@@ -160,13 +160,13 @@
             });
           }
         };
+
       case 'nebula':
         return class NebulaScene extends Phaser.Scene {
           create() {
-            const nodes = $state.relationshipNebula.nodes;
-            const edges = $state.relationshipNebula.edges;
+            const nodes = apiStore.relationshipNebula?.nodes || [];
+            const edges = apiStore.relationshipNebula?.edges || [];
 
-            // Listen for updates
             this.events.on('update-nebula', (data: { nodes: any[], edges: any[] }) => {
               this.redrawNebula(data.nodes, data.edges);
             });
@@ -177,7 +177,6 @@
 
           redrawNebula(nodes: any[], edges: any[]) {
             this.children.removeAll();
-            // Draw edges first (under nodes)
             edges.forEach(edge => {
               const source = nodes.find(n => n.id === edge.source);
               const target = nodes.find(n => n.id === edge.target);
@@ -190,7 +189,6 @@
                 ).setLineWidth(2 * edge.strength);
               }
             });
-            // Draw nodes
             nodes.forEach(node => {
               const circle = this.add.circle(node.x, node.y, node.size || 20, node.color).setInteractive();
               circle.on('pointerdown', () => {
@@ -199,6 +197,7 @@
             });
           }
         };
+
       case 'dialogue':
       default:
         return class DialogueScene extends Phaser.Scene {
@@ -206,23 +205,19 @@
           private dialogueText?: Phaser.GameObjects.Text;
 
           create() {
-            // Background
             this.add.rectangle(400, 300, 800, 600, 0x0d0d1a);
 
-            // Listen for NPC updates
             this.events.on('update-npc', (npc: any) => {
               this.currentNPC = npc;
               this.updatePortrait(npc);
             });
 
-            // Initial NPC
-            const npc = $state.activeNPCs[0];
+            const npc = apiStore.npcs[0];
             if (npc) {
               this.currentNPC = npc;
               this.updatePortrait(npc);
             }
 
-            // Dialogue box
             const box = this.add.rectangle(400, 450, 700, 150, 0x1a1a35).setStrokeStyle(4, 0xff6eb4);
             this.dialogueText = this.add.text(420, 420, '', {
               fontFamily: '"Share Tech Mono"',
@@ -235,10 +230,9 @@
           }
 
           updatePortrait(npc: any) {
-            // Clear previous portrait
             this.children.list.forEach(child => {
               if (child.input && child.input.enabled && child !== this.dialogueText?.parent) {
-                // Simplified: just update placeholder
+                child.destroy();
               }
             });
             const portrait = this.add.rectangle(400, 200, 150, 150, 0x7b61ff);
@@ -253,10 +247,8 @@
             }).setOrigin(0.5);
           }
 
-          // Method to show dialogue (called via eventBus)
           showDialogue(text: string) {
             if (this.dialogueText) {
-              // Typewriter effect
               this.tweens.add({
                 targets: this.dialogueText,
                 alpha: 0,
@@ -268,20 +260,13 @@
               });
             }
           }
-        };
-
-            eventBus.emit('scene-ready');
-          }
 
           updateDialogue(text: string) {
-            // Clear old text
             this.children.list.forEach(child => {
               if (child.type === 'Text' && child.style?.fontFamily?.includes('Share')) {
                 child.destroy();
               }
             });
-
-            // Add new dialogue
             this.add.text(400, 450, text, {
               fontSize: '16px',
               fontFamily: '"Share Tech Mono", monospace',
@@ -293,34 +278,6 @@
         };
     }
   }
-
-  function getEmotionColor(emotion?: string): number {
-    const colors: Record<string, number> = {
-      joy: 0xff6eb4,
-      sadness: 0x00e5ff,
-      anger: 0xff0000,
-      fear: 0x8888bb,
-      neutral: 0x3a3a6a,
-      comforting: 0x4dff91,
-      hostile: 0xff4444,
-      defiant: 0xffaa00
-    };
-    return colors[emotion || 'neutral'] || 0x3a3a6a;
-  }
-
-  function getEdgeColor(type: string): number {
-    switch (type) {
-      case 'protector': return 0x4dff91;
-      case 'competitor': return 0xff6eb4;
-      case 'shadow': return 0x7b61ff;
-      default: return 0x3a3a6a;
-    }
-  }
 </script>
 
-<div class="relative">
-  <canvas bind:this={canvas} class="border-2 border-border" />
-  {#if sceneType === 'dialogue'}
-    <slot />
-  {/if}
-</div>
+<div bind:this={canvas} class="w-full h-full"></div>

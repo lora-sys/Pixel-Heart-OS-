@@ -1,28 +1,26 @@
-# Frontend Dockerfile
+# Frontend Dockerfile - Simplified
 FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy package files
-COPY frontend/package.json frontend/bun.lockb ./
-RUN npm install -g bun && bun install
+# Copy dependency files
+COPY package.json ./
+RUN npm install
 
 # Copy source
-COPY frontend/ ./
+COPY . .
 
-# Build
-RUN bun run build
+# Build - adapter-static outputs to build/
+RUN npm run build
 
-# ---
-
+# --- Runtime ---
 FROM nginx:alpine
 
-# Copy built assets
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy static files
+COPY --from=builder /app/build/ /usr/share/nginx/html/
 
-# Copy nginx config
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# Simple SPA routing config
+RUN echo "server { listen 80; root /usr/share/nginx/html; location / { try_files \$uri \$uri/ /index.html; } }" > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

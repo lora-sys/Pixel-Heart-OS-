@@ -1,7 +1,7 @@
 /**
  * Scene Service - API client for scene endpoints
  */
-import { dedupedFetch } from './api/client';
+import { dedupedFetch } from '../api/client';
 import type { Scene } from '../types/shared-types';
 
 export interface SceneResponse {

@@ -41,11 +41,12 @@
            resize-none overflow-hidden transition-colors
            placeholder:text-text-dim"
     style="min-height: {rows * 1.5}em;"
-  />
+  ></textarea>
 
   <!-- Cursor blink indicator -->
   <div
     class="absolute right-2 bottom-2 w-2 h-4 bg-accent-1 opacity-50"
     class:opacity-0={!cursorVisible}
-  />
+  >
+  </div>
 </div>

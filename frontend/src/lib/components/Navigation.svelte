@@ -33,8 +33,8 @@
     </ul>
 
     <div class="text-text-dim text-xs">
-      {#if apiStore.heroine}
-        <span class="text-accent-1">Heroine: {apiStore.heroine.identity.name}</span>
+      {#if $apiStore.heroine}
+        <span class="text-accent-1">Heroine: {$apiStore.heroine.identity.name}</span>
       {:else}
         <span>No heroine</span>
       {/if}

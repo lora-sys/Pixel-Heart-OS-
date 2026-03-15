@@ -1,7 +1,7 @@
 /**
  * Heroine Service - API client for heroine endpoints
  */
-import { dedupedFetch } from './api/client';
+import { dedupedFetch } from '../api/client';
 import type { Heroine } from '../types/shared-types';
 
 export interface CreateHeroineRequest {

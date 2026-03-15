@@ -14,13 +14,5 @@ export { apiStore, cacheData, getCachedData, invalidateCache, clearCache, API_CA
 // TODO: migrate imports to use shared-types.ts directly
 export type { Heroine, NPC, Scene, Bead, NebulaNode, NebulaEdge, AppState } from '../types/shared-types';
 
-// Legacy derived stores (moved to derived stores)
-export const calculatedNPCs = $derived(() => apiStore.npcs);
-export const timelineBranches = $derived(() => {
-  const branches = new Set(apiStore.beads.map(b => b.branch_name));
-  return Array.from(branches);
-});
-export const currentBead = $derived(() => {
-  if (apiStore.beads.length === 0) return null;
-  return apiStore.beads[apiStore.beads.length - 1];
-});
+// Note: Legacy derived stores are no longer automatically updated.
+// Use $apiStore directly in components or create local derived values.

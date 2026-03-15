@@ -1,7 +1,7 @@
 /**
  * Bead Service - API client for beads endpoints
  */
-import { dedupedFetch } from './api/client';
+import { dedupedFetch } from '../api/client';
 import type { Bead } from '../types/shared-types';
 
 export interface BeadCreate {

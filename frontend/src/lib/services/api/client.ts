@@ -69,7 +69,7 @@ export async function apiFetch<T>(
  */
 const pendingRequests = new Map<string, Promise<any>>();
 
-export async function dedupedFetch<T>(
+export export async function dedupedFetch<T>(
   endpoint: string,
   config: RequestConfig = {}
 ): Promise<T> {

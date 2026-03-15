@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { uiStore, apiStore, API_CACHE_KEYS } from '$lib/core/store';
+  import { uiStore, apiStore } from '$lib/core/store';
   import { heroineService } from '$lib/services/heroine.service';
   import TerminalInput from '$lib/components/TerminalInput.svelte';
 
@@ -11,7 +10,7 @@
   async function handleCreate() {
     if (!description.trim()) return;
 
-    uiStore.isLoading = true;
+    uiStore.update(s => ({ ...s, isLoading: true, errorMessage: null }));
     localError = null;
 
     try {
@@ -21,19 +20,19 @@
       });
 
       // Update API store
-      apiStore.heroine = result;
-      apiStore.lastUpdated = new Date().toISOString();
-
-      // Invalidate cache
-      invalidateCache(API_CACHE_KEYS.HEROINE);
+      apiStore.update(state => ({
+        ...state,
+        heroine: result,
+        lastUpdated: new Date().toISOString()
+      }));
 
       // Navigate to universe after short delay
       setTimeout(() => goto('/universe'), 1500);
     } catch (e: any) {
       localError = e.message || 'Failed to create heroine';
-      uiStore.errorMessage = localError;
+      uiStore.update(s => ({ ...s, errorMessage: localError }));
     } finally {
-      uiStore.isLoading = false;
+      uiStore.update(s => ({ ...s, isLoading: false }));
     }
   }
 </script>
@@ -78,24 +77,24 @@
     <!-- Preview Panel -->
     <div class="card">
       <h2 class="font-pixel text-accent-3 mb-4">
-        {#if apiStore.heroine}
+        {#if $apiStore.heroine}
           Generated
         {:else}
           Preview
         {/if}
       </h2>
 
-      {#if apiStore.heroine}
+      {#if $apiStore.heroine}
         <div class="space-y-4">
           <div>
             <h3 class="text-accent-1 font-bold mb-1">Soul Structure</h3>
-            <pre class="text-xs bg-bg-dark p-2 overflow-auto max-h-40">{JSON.stringify(apiStore.heroine.soul, null, 2)}</pre>
+            <pre class="text-xs bg-bg-dark p-2 overflow-auto max-h-40">{JSON.stringify($apiStore.heroine.soul, null, 2)}</pre>
           </div>
 
           <div>
             <h3 class="text-accent-3 font-bold mb-1">Identity</h3>
-            <p class="text-sm">{apiStore.heroine.identity.name}, {apiStore.heroine.identity.age}</p>
-            <p class="text-text-dim">{apiStore.heroine.identity.personality}</p>
+            <p class="text-sm">{$apiStore.heroine.identity.name}, {$apiStore.heroine.identity.age}</p>
+            <p class="text-text-dim">{$apiStore.heroine.identity.personality}</p>
           </div>
         </div>
       {:else}
