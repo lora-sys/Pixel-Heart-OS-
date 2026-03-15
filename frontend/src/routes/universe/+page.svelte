@@ -1,56 +1,49 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { state, type NPC } from '$lib/stores/app-store';
-  import { npcAPI, sceneAPI } from '$lib/api/client';
   import { goto } from '$app/navigation';
+  import { uiStore, apiStore, invalidateCache, API_CACHE_KEYS } from '$lib/core/store';
+  import { npcService, sceneService } from '$lib/services';
   import NPCCard from '$lib/components/NPCCard.svelte';
   import SceneCard from '$lib/components/SceneCard.svelte';
   import DiffViewer from '$lib/components/DiffViewer.svelte';
 
   let loading = false;
-  let error: string | null = null;
-  let refiningNPC: NPC | null = null;
+  let localError: string | null = null;
+  let refiningNPC: any = null;
   let refinement: { original: any; suggested: any; diff: any[] } | null = null;
 
   onMount(async () => {
-    if (!$state.heroine) {
+    if (!apiStore.heroine) {
       goto('/create');
       return;
     }
-
     await loadUniverse();
   });
 
   async function loadUniverse() {
     loading = true;
-    error = null;
+    localError = null;
 
     try {
-      // Load NPCs
-      const npcs = await npcAPI.list();
+      // Load NPCs with cache
+      let npcs = await npcService.list();
+
       if (npcs.length === 0) {
         // Generate NPCs if none exist
-        const generated = await npcAPI.generate();
-        state.npcs = generated.map(n => ({
-          id: n.id,
-          name: n.name,
-          role: n.role as 'protector' | 'competitor' | 'shadow',
-          soul: n.soul,
-          identity: n.identity,
-          voice: n.voice,
-          created_at: n.created_at
-        }));
-      } else {
-        state.npcs = npcs;
+        npcs = await npcService.generate();
       }
 
+      // Update API store
+      apiStore.npcs = npcs;
+
       // Load scenes (generate if needed)
-      const scenes = await sceneAPI.list();
-      if (scenes.length === 0) {
-        await sceneAPI.generate();
-      }
+      // Note: sceneService.list() returns empty currently (needs implementation)
+      // For now, we can skip or generate
+      await sceneService.generate(); // Generate some scenes
+
     } catch (e: any) {
-      error = e.message || 'Failed to load universe';
+      localError = e.message || 'Failed to load universe';
+      uiStore.errorMessage = localError;
     } finally {
       loading = false;
     }
@@ -60,103 +53,78 @@
     goto('/simulate');
   }
 
-  async function startRefinement(npc: NPC) {
-    refiningNPC = npc;
-    const result = await npcAPI.refine(npc.id, 'Deepen the character: give more nuanced motivations and internal contradictions');
-    refinement = result;
-  }
+  async function handleRefineNPC(npcId: string, feedback: string) {
+    try {
+      const result = await npcService.refine(npcId, feedback);
+      refinement = result;
 
-  async function applyRefinement() {
-    if (!refinement) return;
-    await npcAPI.applyRefinement(refiningNPC!.id, refinement.suggested);
-    // Refresh NPC data
-    const updated = await npcAPI.get(refiningNPC!.id);
-    state.npcs = state.npcs.map(n =>
-      n.id === refiningNPC!.id
-        ? { ...n, ...updated, soul: updated.soul, identity: updated.identity, voice: updated.voice }
-        : n
-    );
-    refiningNPC = null;
-    refinement = null;
+      // Update store with refined data after user approves
+      // For now, auto-apply (refine endpoint already updates DB)
+      const index = apiStore.npcs.findIndex(n => n.id === npcId);
+      if (index !== -1) {
+        apiStore.npcs[index] = { ...apiStore.npcs[index], ...result.suggested };
+      }
+
+      invalidateCache(API_CACHE_KEYS.NPC(npcId));
+      invalidateCache(API_CACHE_KEYS.NPC_LIST);
+    } catch (e: any) {
+      localError = e.message || 'Failed to refine NPC';
+    }
   }
 </script>
 
 <div class="max-w-6xl mx-auto">
   <header class="mb-8">
-    <h1 class="text-accent-2 font-pixel text-3xl mb-2">Emergent Universe</h1>
-    <p class="text-text-dim">
-      Your heroine's soul has manifested these characters and scenes.
-    </p>
+    <h1 class="text-accent-2 font-pixel text-3xl mb-2">Universe</h1>
+    <p class="text-text-dim">Your heroine's social network has emerged.</p>
   </header>
 
   {#if loading}
     <div class="text-center py-12">
-      <div class="inline-block animate-spin text-accent-1 text-4xl">⟳</div>
-      <p class="mt-4">Generating universe...</p>
+      <span class="text-accent-1 animate-pulse">Weaving the universe...</span>
     </div>
   {/if}
 
-  {#if error}
-    <div class="card border-red-500 mb-6">
-      <p class="text-red-300">{error}</p>
+  {#if localError}
+    <div class="mb-6 p-4 border border-red-500 text-red-300 bg-red-900/20">
+      {localError}
     </div>
   {/if}
 
-  <!-- NPCs Section -->
-  <section class="mb-12">
-    <h2 class="font-pixel text-accent-1 text-xl mb-4">Characters</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {#each $state.npcs as npc (npc.id)}
-        <NPCCard
-          {npc}
-          on:refine={() => startRefinement(npc)}
-        />
-      {/each}
-    </div>
-  </section>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- NPCs Section -->
+    <section>
+      <h2 class="font-pixel text-accent-1 text-xl mb-4">Characters</h2>
+      <div class="space-y-4">
+        {#each apiStore.npcs as npc (npc.id)}
+          <NPCCard
+            {npc}
+            onRefine={(feedback) => handleRefineNPC(npc.id, feedback)}
+          />
+        {/each}
+      </div>
+    </section>
 
-  <!-- Scenes Section -->
-  <section class="mb-12">
-    <h2 class="font-pixel text-accent-3 text-xl mb-4">Environments</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Placeholder - will populate with scene data -->
-      {#each ['Rainy Window', 'Midnight Store', 'Abandoned Park'] as sceneName, i}
-        <SceneCard
-          name={sceneName}
-          description="A moody environment matching the heroine's preferences."
-        />
-      {/each}
-    </div>
-  </section>
+    <!-- Scenes Section -->
+    <section>
+      <h2 class="font-pixel text-accent-3 text-xl mb-4">Scenes</h2>
+      <div class="space-y-4">
+        <!-- Scenes would be populated here -->
+        <div class="card border-dashed border-2 border-border">
+          <p class="text-text-dim text-sm">
+            Scene generation is being woven into the fabric.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
 
-  <!-- Action -->
-  <div class="text-center py-8">
-    <button class="btn-primary font-pixel text-lg px-8 py-3" on:click={startSimulation}>
-      Begin Simulation →
+  <div class="mt-8 text-center">
+    <button
+      class="btn-primary px-6 py-3 font-pixel"
+      on:click={startSimulation}
+    >
+      Enter Simulation
     </button>
   </div>
 </div>
-
-<!-- Refinement Modal -->
-{#if refiningNPC && refinement}
-  <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div class="card max-w-4xl w-full max-h-[90vh] overflow-auto mx-4">
-      <h2 class="font-pixel text-accent-2 text-xl mb-4">
-        Refine: {refiningNPC.name}
-      </h2>
-      <DiffViewer
-        original={refinement.original}
-        suggested={refinement.suggested}
-        diff={refinement.diff}
-      />
-      <div class="flex justify-end gap-4 mt-6">
-        <button class="btn-secondary" on:click={() => { refiningNPC = null; refinement = null; }}>
-          Cancel
-        </button>
-        <button class="btn-primary" on:click={applyRefinement}>
-          Apply Changes
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}

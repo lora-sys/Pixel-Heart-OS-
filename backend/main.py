@@ -2,15 +2,13 @@
 Pixel Heart OS - Backend API
 """
 import asyncio
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import logging
 
 from config import settings
-from database import init_db, close_db
-from api.v1 import router as v1_router
+from core.lifecycle import AppLifecycle
 
 # Configure logging
 logging.basicConfig(
@@ -20,44 +18,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Application lifespan: startup and shutdown events.
-    """
-    # Startup
-    logger.info("Starting Pixel Heart OS backend...")
-    await init_db()
-    logger.info("Database initialized")
-
-    yield
-
-    # Shutdown
-    logger.info("Shutting down...")
-    await close_db()
-    logger.info("Shutdown complete")
-
-
-app = FastAPI(
-    title="Pixel Heart OS API",
-    description="Backend API for AI-driven emergent social universe",
-    version="0.1.0",
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include routers
-app.include_router(v1_router, prefix="/api/v1")
+# Initialize lifecycle manager
+lifecycle_manager = AppLifecycle(settings)
+app = lifecycle_manager.create_app()
 
 
 @app.get("/health")
@@ -77,12 +40,13 @@ async def root():
     }
 
 
-# Exception handlers
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail, "status_code": exc.status_code}
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc) if settings.debug else None}
     )
 
 

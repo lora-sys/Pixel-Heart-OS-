@@ -35,7 +35,7 @@ class EmotionTag(str, enum.Enum):
     TRUST = "trust"
     ANTICIPATION = "anticipation"
     COMFORTING = "comforting"
-   HostILE = "hostile"
+    HOSTILE = "hostile"
     DEFIANT = "defiant"
     MYSTERIOUS = "mysterious"
 

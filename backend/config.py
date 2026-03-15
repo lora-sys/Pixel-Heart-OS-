@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # Mock mode (for testing without API key)
     use_mock_llm: bool = False
 
+    # Caching
+    cache_ttl_beads: int = 60  # seconds
+    cache_ttl_heroine: int = 120
+    cache_ttl_npcs: int = 120
+
     class Config:
         env_file = ".env"
         case_sensitive = False

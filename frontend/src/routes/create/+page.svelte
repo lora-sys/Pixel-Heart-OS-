@@ -1,40 +1,39 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { state } from '$lib/stores/app-store';
-  import { heroineAPI } from '$lib/api/client';
   import { goto } from '$app/navigation';
+  import { uiStore, apiStore, API_CACHE_KEYS } from '$lib/core/store';
+  import { heroineService } from '$lib/services/heroine.service';
   import TerminalInput from '$lib/components/TerminalInput.svelte';
 
   let description = '';
-  let loading = false;
-  let error: string | null = null;
-  let createdData: any = null;
+  let localError: string | null = null;
 
   async function handleCreate() {
     if (!description.trim()) return;
 
-    loading = true;
-    error = null;
+    uiStore.isLoading = true;
+    localError = null;
 
     try {
-      const result = await heroineAPI.create(description);
-      createdData = result;
+      const result = await heroineService.create({
+        description,
+        input_mode: 'free_description'
+      });
 
-      // Update global state
-      state.heroine = {
-        id: result.id,
-        soul: result.soul,
-        identity: result.identity,
-        voice: result.voice,
-        created_at: result.created_at
-      };
+      // Update API store
+      apiStore.heroine = result;
+      apiStore.lastUpdated = new Date().toISOString();
+
+      // Invalidate cache
+      invalidateCache(API_CACHE_KEYS.HEROINE);
 
       // Navigate to universe after short delay
       setTimeout(() => goto('/universe'), 1500);
     } catch (e: any) {
-      error = e.message || 'Failed to create heroine';
+      localError = e.message || 'Failed to create heroine';
+      uiStore.errorMessage = localError;
     } finally {
-      loading = false;
+      uiStore.isLoading = false;
     }
   }
 </script>
@@ -58,10 +57,10 @@
       <div class="mt-4 flex gap-2">
         <button
           class="btn-primary flex-1"
-          disabled={loading || !description.trim()}
+          disabled={$uiStore.isLoading || !description.trim()}
           on:click={handleCreate}
         >
-          {#if loading}
+          {#if $uiStore.isLoading}
             Parsing...
           {:else}
             Create Heroine
@@ -69,9 +68,9 @@
         </button>
       </div>
 
-      {#if error}
+      {#if localError}
         <div class="mt-4 p-3 border border-red-500 text-red-300">
-          {error}
+          {localError}
         </div>
       {/if}
     </div>
@@ -79,24 +78,24 @@
     <!-- Preview Panel -->
     <div class="card">
       <h2 class="font-pixel text-accent-3 mb-4">
-        {#if createdData}
+        {#if apiStore.heroine}
           Generated
         {:else}
           Preview
         {/if}
       </h2>
 
-      {#if createdData}
+      {#if apiStore.heroine}
         <div class="space-y-4">
           <div>
             <h3 class="text-accent-1 font-bold mb-1">Soul Structure</h3>
-            <pre class="text-xs bg-bg-dark p-2 overflow-auto max-h-40">{JSON.stringify(createdData.soul, null, 2)}</pre>
+            <pre class="text-xs bg-bg-dark p-2 overflow-auto max-h-40">{JSON.stringify(apiStore.heroine.soul, null, 2)}</pre>
           </div>
 
           <div>
             <h3 class="text-accent-3 font-bold mb-1">Identity</h3>
-            <p class="text-sm">{createdData.identity.name}, {createdData.identity.age}</p>
-            <p class="text-text-dim">{createdData.identity.personality}</p>
+            <p class="text-sm">{apiStore.heroine.identity.name}, {apiStore.heroine.identity.age}</p>
+            <p class="text-text-dim">{apiStore.heroine.identity.personality}</p>
           </div>
         </div>
       {:else}

@@ -2,13 +2,11 @@
   import '../app.css';
   import Navigation from '$lib/components/Navigation.svelte';
   import { setContext } from 'svelte';
-  import { writable } from 'svelte/store';
+  import { uiStore, apiStore } from '$lib/core/store';
 
-  // Global app state store (Svelte 5 Runes style)
-  import { state } from '$lib/stores/app-store';
-
-  // Pass state to children via context
-  setContext('appState', state);
+  // Pass stores to children via context for easy access
+  setContext('uiStore', uiStore);
+  setContext('apiStore', apiStore);
 </script>
 
 <div class="min-h-screen bg-bg-dark text-text-main font-mono">

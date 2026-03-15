@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { state } from '$lib/stores/app-store';
   import { page } from '$app/stores';
+  import { apiStore } from '$lib/core/store';
 
   const navItems = [
     { href: '/create', label: 'Create' },
@@ -33,8 +33,8 @@
     </ul>
 
     <div class="text-text-dim text-xs">
-      {#if $state.heroine}
-        <span class="text-accent-1">Heroine: {$state.heroine.identity.name}</span>
+      {#if apiStore.heroine}
+        <span class="text-accent-1">Heroine: {apiStore.heroine.identity.name}</span>
       {:else}
         <span>No heroine</span>
       {/if}
