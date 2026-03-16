@@ -1,0 +1,1 @@
+# Placeholder for bead service

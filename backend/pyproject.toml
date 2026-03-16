@@ -1,0 +1,63 @@
+[project]
+name = "pixel-heart-os-backend"
+version = "0.1.0"
+description = "Backend for Pixel Heart OS - AI-driven emergent social universe system"
+authors = [
+    {name = "Pixel Heart OS Team", email = "dev@pixelheartos.example"}
+]
+dependencies = [
+    "fastapi>=0.100.0,<0.110.0",
+    "uvicorn>=0.23.0,<0.25.0",
+    "langgraph>=0.0.20,<0.1.0",
+    "sqlalchemy>=2.0.0,<3.0.0",
+    "chromadb>=0.4.0,<0.5.0",
+    "aiosqlite>=0.17.0,<0.18.0",
+    "anthropic>=0.7.0,<0.8.0",
+    "python-dotenv>=1.0.0,<1.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<0.22.0",
+    "ruff>=0.1.0,<0.2.0",
+    "black>=23.0.0,<24.0.0",
+    "mypy>=1.0.0,<2.0.0",
+    "alembic>=1.12.0,<2.0.0"
+]
+
+[build-system]
+requires = ["setuptools>=65.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "W", "C90", "B", "I", "N", "UP", "PL", "RUF"]
+ignore = []
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.py$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-v", "--cov=.", "--cov-report=html"]

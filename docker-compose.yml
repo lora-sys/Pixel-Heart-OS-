@@ -1,0 +1,70 @@
+# Development stack for Pixel Heart OS
+version: '3.8'
+
+services:
+  # Frontend service - Bun + Vite dev server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Backend service - FastAPI with Uvicorn
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/pixel_heart_os.db
+      - CHROMA_DB_PATH=/app/chroma_db
+      - DATA_DIR=/app/data
+      - USE_MOCK_LLM=true
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ChromaDB vector database service
+  chromadb:
+    image: chromadb/chroma:0.4.15
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma
+    environment:
+      - ALLOW_RESET=true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/v1')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  chroma_data:

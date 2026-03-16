@@ -1,0 +1,20 @@
+{
+  "active_plan": "/home/lora/repos/Pixel-Heart-OS-/.sisyphus/plans/pixel-heart-os-setup.md",
+  "started_at": "2026-03-16T12:14:44.183Z",
+  "session_ids": [
+    "ses_30af94a3dffenJpt68FjAQ6Qdo",
+    "ses_3096ae9ceffePzxPYx1u8cjy46",
+    "ses_30961f9eaffevvZTU25aUnFhJ3",
+    "ses_3095c209cffe4B716KIj2TuOas",
+    "ses_30957c7b8ffeO3aCXz6hCk2p2j",
+    "ses_3095306aeffembrZ5CQ5ZjanOm",
+    "ses_3094eab65ffe5L7FuL8Vvhsw5G",
+    "ses_3094ada10ffeHRp3bWK79i0aQz",
+    "ses_309421681ffeOhGAmlCeC0HLGJ"
+  ],
+  "plan_name": "pixel-heart-os-setup",
+  "agent": "atlas",
+  "completed_tasks": 19,
+  "total_tasks": 93,
+  "updated_at": "2026-03-16T22:20:00.000Z"
+}
