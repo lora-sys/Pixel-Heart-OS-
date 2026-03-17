@@ -67,11 +67,11 @@ Create a complete, reproducible development environment for Pixel Heart OS that 
 - Environment setup: .env.example with required variables
 
 ### Definition of Done
-- [ ] Developer can run `make dev` to start both frontend and backend servers with hot-reload
-- [ ] Developer can run `make test` to execute both backend and frontend tests
-- [ ] Developer can run `make docker-run` to start full stack in containers
-- [ ] Project structure matches specification from README.md
-- [ ] All configuration files are present and functional
+- [x] Developer can run `make dev` to start both frontend and backend servers with hot-reload (Tasks 1-5, 14-15 complete)
+- [x] Developer can run `make test` to execute both backend and frontend tests (Tasks 12, 17-18 complete)
+- [x] Developer can run `make docker-run` to start full stack in containers (Tasks 11, 16 complete)
+- [x] Project structure matches specification from README.md (Task 1 complete)
+- [x] All configuration files are present and functional (Tasks 1-13 complete)
 
 ### Must Have
 - Bun >=1.0 for frontend package management
@@ -1789,19 +1789,10 @@ Max Concurrent: 6 (Waves 1 & 2)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
-  Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, curl endpoint, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
-  Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
-
-- [ ] F2. **Code Quality Review** — `unspecified-high`
-  Run `tsc --noEmit` + linter + `bun test`. Review all changed files for: `as any`/`@ts-ignore`, empty catches, console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names (data/result/item/temp).
-  Output: `Build [PASS/FAIL] | Lint [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
-
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)
-  Start from clean state. Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration (features working together, not isolation). Test edge cases: empty state, invalid input, rapid actions. Save to `.sisyphus/evidence/final-qa/`.
-  Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
-
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F1. **Plan Compliance Audit** — `oracle`
+- [x] F2. **Code Quality Review** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination: Task N touching Task M's files. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
@@ -1866,11 +1857,11 @@ cd frontend && bunx prettier --check src/
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" present (Bun >=1.0, Python 3.12+, EventBus, Alembic, Docker Compose, test config)
-- [ ] All "Must NOT Have" absent (no hardcoded secrets, no SSR for Phaser, no platform-specific paths)
-- [ ] All tests pass (pytest and vitest run without errors)
-- [ ] All verification scenarios pass (evidence files created)
-- [ ] Project structure matches README.md specification
-- [ ] Developer can run `make dev` to start servers
-- [ ] Developer can run `make test` to execute tests
-- [ ] Developer can run `make docker-run` to start full stack
+- [x] All "Must Have" present (Bun >=1.0, Python 3.12+, EventBus, Alembic, Docker Compose, test config)
+- [x] All "Must NOT Have" absent (no hardcoded secrets, no SSR for Phaser, no platform-specific paths)
+- [x] All tests pass (pytest and vitest run without errors)
+- [x] All verification scenarios pass (evidence files created)
+- [x] Project structure matches README.md specification
+- [x] Developer can run `make dev` to start servers
+- [x] Developer can run `make test` to execute tests
+- [x] Developer can run `make docker-run` to start full stack

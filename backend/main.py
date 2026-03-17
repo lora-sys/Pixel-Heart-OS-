@@ -68,6 +68,15 @@ async def api_root():
     }
 
 
+from api.v1 import heroine, npcs, scenes, beads, simulation
+
+app.include_router(heroine.router, prefix="/api/v1")
+app.include_router(npcs.router, prefix="/api/v1")
+app.include_router(scenes.router, prefix="/api/v1")
+app.include_router(beads.router, prefix="/api/v1")
+app.include_router(simulation.router, prefix="/api/v1")
+
+
 if __name__ == "__main__":
     import uvicorn
 
