@@ -3,9 +3,9 @@ Container for dependency injection.
 """
 
 from typing import Dict, Any
-from backend.llm.service import LLMService
-from backend.beads.engine import BeadEngine
-from backend.storage.file_system import FileSystemService
+from llm.service import LLMService
+from beads.engine import BeadEngine
+from storage.file_system import FileSystemService
 
 
 class Container:
@@ -34,7 +34,7 @@ class Container:
         return self._singletons["storage_service"]
 
 
-_container: Container = None
+_container: Container | None = None
 
 
 def get_container() -> Container:
