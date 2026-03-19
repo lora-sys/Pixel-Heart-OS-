@@ -33,6 +33,14 @@ class Container:
             self._singletons["storage_service"] = FileSystemService()
         return self._singletons["storage_service"]
 
+    def get_vector_store(self) -> Any:
+        """Get VectorStoreService singleton."""
+        if "vector_store" not in self._singletons:
+            from vector_store.chroma_client import VectorStoreService
+
+            self._singletons["vector_store"] = VectorStoreService()
+        return self._singletons["vector_store"]
+
 
 _container: Container | None = None
 
