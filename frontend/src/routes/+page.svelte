@@ -5,9 +5,10 @@
   import * as store from '$lib/core/store/api-store';
   import * as appStore from '$lib/core/store/app-store';
 
-  let description = '';
-  let loading = false;
-  let errorMsg = '';
+  let description = $state('');
+  let loading = $state(false);
+  let errorMsg = $state('');
+  let step = $state<'input' | 'creating' | 'success'>('input');
 
   onMount(async () => {
     try {
@@ -29,15 +30,22 @@
       return;
     }
     loading = true;
+    step = 'creating';
     errorMsg = '';
+
     try {
       const heroine = await api.createHeroine(description);
       store.setHeroine(heroine);
+      
       const npcs = await api.generateNPCs(3);
       store.setNPCs(npcs);
+      
+      step = 'success';
+      await new Promise(resolve => setTimeout(resolve, 1000));
       goto('/universe');
     } catch (e) {
-      errorMsg = 'Failed to create heroine';
+      errorMsg = 'Failed to create heroine. Please try again.';
+      step = 'input';
     } finally {
       loading = false;
     }
@@ -49,31 +57,45 @@
     <h1 class="text-3xl font-bold text-white mb-2">Pixel Heart OS</h1>
     <p class="text-gray-400 mb-6">Create your heroine from a natural language description</p>
     
-    <form on:submit|preventDefault={createHeroine}>
-      <textarea
-        bind:value={description}
-        placeholder="Describe your heroine... (e.g., 'A brave young woman with a mysterious past who seeks to protect her village')"
-        class="w-full h-40 bg-gray-700 text-white rounded-lg p-4 mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500"
-        disabled={loading}
-      ></textarea>
+    {#if step === 'input'}
+      <form onsubmit={(e) => { e.preventDefault(); createHeroine(); }}>
+        <textarea
+          bind:value={description}
+          placeholder="Describe your heroine... (e.g., 'A brave young woman with a mysterious past who seeks to protect her village')"
+          class="w-full h-40 bg-gray-700 text-white rounded-lg p-4 mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500"
+          disabled={loading}
+        ></textarea>
+        
+        {#if errorMsg}
+          <p class="text-red-400 mb-4">{errorMsg}</p>
+        {/if}
+        
+        <button
+          type="submit"
+          disabled={loading || !description.trim()}
+          class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+        >
+          {loading ? 'Creating...' : 'Create Heroine'}
+        </button>
+      </form>
       
-      {#if errorMsg}
-        <p class="text-red-400 mb-4">{errorMsg}</p>
-      {/if}
-      
-      <button
-        type="submit"
-        disabled={loading}
-        class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
-      >
-        {loading ? 'Creating...' : 'Create Heroine'}
-      </button>
-    </form>
-    
-    <div class="mt-6 text-center">
-      <p class="text-gray-500 text-sm">
-        Your heroine will be generated with unique soul, identity, and voice
-      </p>
-    </div>
+      <div class="mt-6 text-center">
+        <p class="text-gray-500 text-sm">
+          Your heroine will be generated with unique soul, identity, and voice
+        </p>
+      </div>
+    {:else if step === 'creating'}
+      <div class="text-center py-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+        <p class="text-white text-lg">Creating your heroine...</p>
+        <p class="text-gray-400 text-sm mt-2">This may take a few moments</p>
+      </div>
+    {:else if step === 'success'}
+      <div class="text-center py-8">
+        <div class="text-6xl mb-4">✨</div>
+        <p class="text-white text-lg">Heroine created!</p>
+        <p class="text-gray-400 text-sm mt-2">Entering your universe...</p>
+      </div>
+    {/if}
   </div>
 </div>

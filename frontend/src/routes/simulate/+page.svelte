@@ -29,6 +29,17 @@
     history = [];
     lastResponse = null;
   }
+
+  function getEmotionColor(emotion: string) {
+    const colors: Record<string, string> = {
+      joy: '#4ade80',
+      sadness: '#3b82f6',
+      anger: '#f87171',
+      fear: '#a78bfa',
+      neutral: '#94a3b8',
+    };
+    return colors[emotion] || colors.neutral;
+  }
 </script>
 
 <div class="p-6">
@@ -79,7 +90,15 @@
           <h2 class="text-lg font-bold text-green-400 mb-3">Turn {lastResponse.turn_number}</h2>
           {#each lastResponse.npc_responses as response}
             <div class="mb-3 pb-3 border-b border-gray-700">
-              <p class="text-pink-300 font-bold">{response.npc_name}</p>
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-pink-300 font-bold">{response.npc_name}</p>
+                <span 
+                  class="text-xs px-2 py-1 rounded"
+                  style="background: {getEmotionColor(response.emotion)}"
+                >
+                  {response.emotion}
+                </span>
+              </div>
               <p class="text-gray-300">{response.message}</p>
             </div>
           {/each}
@@ -91,14 +110,20 @@
       <h2 class="text-lg font-bold text-white mb-3">History</h2>
       <div class="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
         {#if history.length === 0}
-          <p class="text-gray-500">No conversation yet</p>
+          <p class="text-gray-500">No conversation yet. Start by sending an action!</p>
         {:else}
-          {#each history as entry}
+          {#each history as entry, i}
             <div class="mb-4 pb-4 border-b border-gray-700">
-              <p class="text-pink-400 font-bold">You:</p>
+              <div class="flex justify-between items-center mb-2">
+                <p class="text-pink-400 font-bold">Turn {i + 1}</p>
+                <p class="text-gray-500 text-sm">You:</p>
+              </div>
               <p class="text-gray-300 mb-2">{entry.action}</p>
               {#each entry.response.npc_responses as resp}
-                <p class="text-green-400 text-sm">{resp.npc_name}: {resp.message}</p>
+                <div class="ml-4 mt-2">
+                  <p class="text-green-400 text-sm font-bold">{resp.npc_name}:</p>
+                  <p class="text-gray-300 text-sm">{resp.message}</p>
+                </div>
               {/each}
             </div>
           {/each}
