@@ -1,0 +1,40 @@
+Parse the following heroine description into structured JSON with three components: soul, identity, and voice.
+
+Description: {description}
+
+Return a JSON object with this exact structure:
+{{
+  "soul": {{
+    "core_personality": "string",
+    "motivations": ["string", "string", "string"],
+    "fears": ["string", "string", "string"],
+    "values": ["string", "string", "string"],
+    "quirks": ["string", "string"],
+    "internal_conflict": "string"
+  }},
+  "identity": {{
+    "name": "string",
+    "age": number,
+    "appearance": {{
+      "hair_color": "string",
+      "eye_color": "string",
+      "height": "string",
+      "build": "string"
+    }},
+    "background": {{
+      "hometown": "string",
+      "family": "string",
+      "education": "string",
+      "occupation": "string"
+    }}
+  }},
+  "voice": {{
+    "speech_pattern": "string",
+    "tone": "string",
+    "vocabulary": "string",
+    "catchphrase": "string",
+    "language_quirks": ["string", "string"]
+  }}
+}}
+
+Return ONLY the JSON object, no additional text.

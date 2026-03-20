@@ -1,0 +1,14 @@
+Generate a scene description for:
+Location: {location}
+Participants: {participants}
+Atmosphere: {atmosphere}
+
+Return JSON:
+{{
+  "title": "string",
+  "description": "string (2-3 sentences)",
+  "sensory_details": ["string", "string", "string"],
+  "mood": "string"
+}}
+
+Return ONLY the JSON object.

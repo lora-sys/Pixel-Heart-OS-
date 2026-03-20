@@ -5,8 +5,11 @@ Provides methods for heroine parsing, NPC generation, and dialogue generation.
 
 import os
 import json
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from anthropic import Anthropic
+
+PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 
 class LLMService:
@@ -19,132 +22,73 @@ class LLMService:
             use_mock: If True, return mock responses instead of calling API
         """
         self.use_mock = use_mock or os.getenv("USE_MOCK_LLM", "false").lower() == "true"
-        self.client = None if self.use_mock else Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        self.client = (
+            None if self.use_mock else Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        )
         self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
+        self._prompts: Dict[str, str] = {}
+        self._load_prompts()
+
+    def _load_prompts(self):
+        """Load all prompt templates from files."""
+        prompt_files = {
+            "heroine_parsing": "heroine_parsing.txt",
+            "npc_generation": "npc_generation.txt",
+            "dialogue_generation": "dialogue_generation.txt",
+            "scene_generation": "scene_generation.txt",
+        }
+
+        for key, filename in prompt_files.items():
+            prompt_path = PROMPTS_DIR / filename
+            if prompt_path.exists():
+                self._prompts[key] = prompt_path.read_text(encoding="utf-8")
+            else:
+                print(f"Warning: Prompt file {filename} not found")
+                self._prompts[key] = ""
 
     async def parse_heroine_description(self, description: str) -> Dict[str, Any]:
-        """Parse natural language description into soul, identity, and voice.
-
-        Args:
-            description: Natural language description of the heroine
-
-        Returns:
-            Dictionary with soul, identity, and voice components
-        """
+        """Parse natural language description into soul, identity, and voice."""
         if self.use_mock:
             return self._mock_heroine_parsing(description)
 
-        prompt = f"""Parse the following heroine description into structured JSON with three components: soul, identity, and voice.
-
-Description: {description}
-
-Return a JSON object with this exact structure:
-{{
-  "soul": {{
-    "core_personality": "string",
-    "motivations": ["string", "string", "string"],
-    "fears": ["string", "string", "string"],
-    "values": ["string", "string", "string"],
-    "quirks": ["string", "string"],
-    "internal_conflict": "string"
-  }},
-  "identity": {{
-    "name": "string",
-    "age": number,
-    "appearance": {{
-      "hair_color": "string",
-      "eye_color": "string",
-      "height": "string",
-      "build": "string"
-    }},
-    "background": {{
-      "hometown": "string",
-      "family": "string",
-      "education": "string",
-      "occupation": "string"
-    }}
-  }},
-  "voice": {{
-    "speech_pattern": "string",
-    "tone": "string",
-    "vocabulary": "string",
-    "catchphrase": "string",
-    "language_quirks": ["string", "string"]
-  }}
-}}
-
-Return ONLY the JSON object, no additional text."""
+        prompt = self._prompts.get("heroine_parsing", "").format(
+            description=description
+        )
 
         message = self.client.messages.create(
             model=self.model,
             max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         response_text = message.content[0].text
         return json.loads(response_text)
 
-    async def generate_npc_personality(self, archetype: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate NPC personality based on archetype.
-
-        Args:
-            archetype: The archetype type (Protector, Competitor, Shadow, Ally, Mentor)
-            context: Context including heroine info
-
-        Returns:
-            Dictionary with NPC personality data
-        """
+    async def generate_npc_personality(
+        self, archetype: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate NPC personality based on archetype."""
         if self.use_mock:
             return self._mock_npc_generation(archetype)
 
         heroine_name = context.get("heroine_name", "the heroine")
-
-        prompt = f"""Generate a detailed NPC personality for a '{archetype}' archetype in a story with {heroine_name}.
-
-Return a JSON object with this structure:
-{{
-  "name": "string (appropriate name for archetype)",
-  "personality": {{
-    "trait1": "string",
-    "trait2": "string",
-    "trait3": "string"
-  }},
-  "backstory": "string (2-3 sentences)",
-  "dialogue_style": {{
-    "tone": "string",
-    "mannerisms": ["string", "string"],
-    "vocabulary_level": "string"
-  }},
-  "relationship_to_heroine": "string"
-}}
-
-Return ONLY the JSON object."""
+        prompt = self._prompts.get("npc_generation", "").format(
+            archetype=archetype, heroine_name=heroine_name
+        )
 
         message = self.client.messages.create(
             model=self.model,
             max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         response_text = message.content[0].text
         return json.loads(response_text)
 
     async def generate_dialogue(
-        self,
-        npc: Dict[str, Any],
-        context: Dict[str, Any],
-        player_action: str
+        self, npc: Dict[str, Any], context: Dict[str, Any], player_action: str
     ) -> str:
-        """Generate NPC dialogue response.
-
-        Args:
-            npc: NPC data including name, personality, dialogue_style
-            context: Conversation context
-            player_action: What the player said/did
-
-        Returns:
-            NPC dialogue string
-        """
+        """Generate NPC dialogue response."""
         if self.use_mock:
             return f"[{npc.get('name', 'NPC')}] I understand your action: {player_action[:50]}..."
 
@@ -152,69 +96,49 @@ Return ONLY the JSON object."""
         npc_personality = npc.get("personality", {})
         dialogue_style = npc.get("dialogue_style", {})
         tone = dialogue_style.get("tone", "neutral")
+        history = json.dumps(context.get("history", [])[-3:])
 
-        prompt = f"""You are {npc_name}, an NPC in a story.
-
-Your personality traits: {npc_personality}
-Your dialogue style: {tone}
-
-Previous context: {json.dumps(context.get("history", [])[-3:])}
-
-The player does/says: "{player_action}"
-
-Respond as {npc_name} in character. Keep response to 1-3 sentences. Do not use quotation marks."""
+        prompt = self._prompts.get("dialogue_generation", "").format(
+            npc_name=npc_name,
+            npc_personality=npc_personality,
+            tone=tone,
+            history=history,
+            player_action=player_action,
+        )
 
         message = self.client.messages.create(
             model=self.model,
             max_tokens=500,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         return message.content[0].text.strip()
 
     async def generate_scene_description(
-        self,
-        location: str,
-        participants: List[str],
-        atmosphere: str
+        self, location: str, participants: List[str], atmosphere: str
     ) -> Dict[str, Any]:
-        """Generate scene description.
-
-        Args:
-            location: Scene location
-            participants: List of participant names
-            atmosphere: Desired atmosphere
-
-        Returns:
-            Dictionary with scene data
-        """
+        """Generate scene description."""
         if self.use_mock:
             return {
                 "title": f"Scene at {location}",
                 "description": f"The characters meet in {location}. The atmosphere is {atmosphere}.",
-                "sensory_details": ["The air feels still", "Sounds echo in the distance"],
-                "mood": atmosphere
+                "sensory_details": [
+                    "The air feels still",
+                    "Sounds echo in the distance",
+                ],
+                "mood": atmosphere,
             }
 
-        prompt = f"""Generate a scene description for:
-Location: {location}
-Participants: {', '.join(participants)}
-Atmosphere: {atmosphere}
-
-Return JSON:
-{{
-  "title": "string",
-  "description": "string (2-3 sentences)",
-  "sensory_details": ["string", "string", "string"],
-  "mood": "string"
-}}
-
-Return ONLY the JSON object."""
+        prompt = self._prompts.get("scene_generation", "").format(
+            location=location,
+            participants=", ".join(participants),
+            atmosphere=atmosphere,
+        )
 
         message = self.client.messages.create(
             model=self.model,
             max_tokens=500,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         response_text = message.content[0].text
@@ -223,16 +147,24 @@ Return ONLY the JSON object."""
     def _mock_heroine_parsing(self, description: str) -> Dict[str, Any]:
         """Mock response for heroine parsing."""
         import hashlib
+
         hash_val = hashlib.md5(description.encode()).hexdigest()[:8]
 
         return {
             "soul": {
                 "core_personality": f"Determined and compassionate individual inspired by: {description[:50]}...",
-                "motivations": ["To protect loved ones", "To find truth", "To overcome adversity"],
+                "motivations": [
+                    "To protect loved ones",
+                    "To find truth",
+                    "To overcome adversity",
+                ],
                 "fears": ["Failure", "Losing control", "Being powerless"],
                 "values": ["Honesty", "Courage", "Compassion"],
-                "quirks": ["Tends to bite lip when thinking", "Always carries a small token"],
-                "internal_conflict": "Balancing personal desires with responsibility to others"
+                "quirks": [
+                    "Tends to bite lip when thinking",
+                    "Always carries a small token",
+                ],
+                "internal_conflict": "Balancing personal desires with responsibility to others",
             },
             "identity": {
                 "name": f"Heroine_{hash_val}",
@@ -241,32 +173,43 @@ Return ONLY the JSON object."""
                     "hair_color": "blonde",
                     "eye_color": "green",
                     "height": "157cm",
-                    "build": "athletic"
+                    "build": "athletic",
                 },
                 "background": {
                     "hometown": "A small coastal village",
                     "family": "Raised by grandparents after parents disappeared",
                     "education": "Self-taught through observation and experience",
-                    "occupation": "Explorer and protector of the realm"
-                }
+                    "occupation": "Explorer and protector of the realm",
+                },
             },
             "voice": {
                 "speech_pattern": "Thoughtful and measured, chooses words carefully",
                 "tone": "warm",
                 "vocabulary": "formal",
                 "catchphrase": "I will not back down from what is right",
-                "language_quirks": ["Uses metaphors from nature", "Speaks in proverbs when thoughtful"]
-            }
+                "language_quirks": [
+                    "Uses metaphors from nature",
+                    "Speaks in proverbs when thoughtful",
+                ],
+            },
         }
 
     def _mock_npc_generation(self, archetype: str) -> Dict[str, Any]:
         """Mock response for NPC generation."""
         personalities = {
             "Protector": {"trait1": "brave", "trait2": "loyal", "trait3": "protective"},
-            "Competitor": {"trait1": "ambitious", "trait2": "driven", "trait3": "competitive"},
-            "Shadow": {"trait1": "mysterious", "trait2": "enigmatic", "trait3": "secretive"},
+            "Competitor": {
+                "trait1": "ambitious",
+                "trait2": "driven",
+                "trait3": "competitive",
+            },
+            "Shadow": {
+                "trait1": "mysterious",
+                "trait2": "enigmatic",
+                "trait3": "secretive",
+            },
             "Ally": {"trait1": "kind", "trait2": "supportive", "trait3": "trustworthy"},
-            "Mentor": {"trait1": "wise", "trait2": "experienced", "trait3": "patient"}
+            "Mentor": {"trait1": "wise", "trait2": "experienced", "trait3": "patient"},
         }
 
         return {
@@ -276,7 +219,7 @@ Return ONLY the JSON object."""
             "dialogue_style": {
                 "tone": "measured",
                 "mannerisms": ["Pauses before speaking", "Uses hand gestures"],
-                "vocabulary_level": "moderate"
+                "vocabulary_level": "moderate",
             },
-            "relationship_to_heroine": "complicated"
+            "relationship_to_heroine": "complicated",
         }

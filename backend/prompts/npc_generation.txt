@@ -1,0 +1,20 @@
+Generate a detailed NPC personality for a '{archetype}' archetype in a story with {heroine_name}.
+
+Return a JSON object with this structure:
+{{
+  "name": "string (appropriate name for archetype)",
+  "personality": {{
+    "trait1": "string",
+    "trait2": "string",
+    "trait3": "string"
+  }},
+  "backstory": "string (2-3 sentences)",
+  "dialogue_style": {{
+    "tone": "string",
+    "mannerisms": ["string", "string"],
+    "vocabulary_level": "string"
+  }},
+  "relationship_to_heroine": "string"
+}}
+
+Return ONLY the JSON object.
