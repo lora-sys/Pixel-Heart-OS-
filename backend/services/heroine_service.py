@@ -144,9 +144,9 @@ class HeroineService:
             voice = parsed_data.get("voice", {})
 
             # Step 2: Persist heroine data to storage
-            await self.storage_service.save_heroine_soul(soul)
-            await self.storage_service.save_heroine_identity(identity)
-            await self.storage_service.save_heroine_voice(voice)
+            await self.storage_service.write_heroine_soul(soul)
+            await self.storage_service.write_heroine_identity(identity)
+            await self.storage_service.write_heroine_voice(voice)
 
             # Step 3: Create bead record for heroine creation
             heroine_data = {"soul": soul, "identity": identity, "voice": voice}
@@ -157,8 +157,9 @@ class HeroineService:
                 "heroine_data": heroine_data,
             }
 
-            # Create bead with create_heroine action
+            # Create bead with create_heroine action (parent_id=None for root node)
             bead_id = await self.bead_service.create_bead(
+                parent_id=None,
                 content=bead_content,
                 action="create_heroine",
                 branch_name="main",  # Heroine creation happens on main branch
