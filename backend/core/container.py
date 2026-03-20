@@ -41,6 +41,44 @@ class Container:
             self._singletons["vector_store"] = VectorStoreService()
         return self._singletons["vector_store"]
 
+    def get_heroine_service(self) -> Any:
+        """Get HeroineService singleton."""
+        if "heroine_service" not in self._singletons:
+            from services.heroine_service import HeroineService
+            from services.bead_service import BeadService
+
+            bead_service = BeadService()
+            self._singletons["heroine_service"] = HeroineService(
+                llm_service=self.get_llm_service(),
+                storage_service=self.get_storage_service(),
+                bead_service=bead_service,
+            )
+        return self._singletons["heroine_service"]
+
+    def get_npc_service(self) -> Any:
+        """Get NPCService singleton."""
+        if "npc_service" not in self._singletons:
+            from services.npc_service import NPCService
+
+            self._singletons["npc_service"] = NPCService()
+        return self._singletons["npc_service"]
+
+    def get_scene_service(self) -> Any:
+        """Get SceneService singleton."""
+        if "scene_service" not in self._singletons:
+            from services.scene_service import SceneService
+
+            self._singletons["scene_service"] = SceneService()
+        return self._singletons["scene_service"]
+
+    def get_simulation_service(self) -> Any:
+        """Get SimulationService singleton."""
+        if "simulation_service" not in self._singletons:
+            from services.simulation_service import SimulationService
+
+            self._singletons["simulation_service"] = SimulationService()
+        return self._singletons["simulation_service"]
+
 
 _container: Container | None = None
 

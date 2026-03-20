@@ -165,7 +165,8 @@ class HeroineService:
                 branch_name="main",  # Heroine creation happens on main branch
             )
 
-            # Step 4: Return heroine data
+            # Step 4: Store heroine data and return
+            self._heroine_data = heroine_data
             return heroine_data
 
         except Exception as e:
